@@ -1,0 +1,57 @@
+* 45 PVT Corner Sweep for Two-Stage Op-Amp
+.include "dacc.spice"
+
+.control
+set filetype=ascii
+set wr_singles
+set wr_vecnames
+
+* Define parameter lists matching your whiteboard spec
+set corners = ( tt ff ss fs sf )
+set voltages = ( 3.3 2.7 3.6 )
+set temps = ( -20 27 85 )
+
+* Create CSV table header
+echo "Process,Vdd(V),Temp(C),DC_Gain(dB),GBW(MHz),PM(deg)" > pvt_results.csv
+
+foreach p $corners
+  foreach v $voltages
+    foreach t $temps
+
+      * Reset circuit state and reload corner library
+      reset
+      .lib /usr/local/share/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice $p
+
+      * Update Vdd supply voltage (V5 in your schematic)
+      alter v5 = $v
+
+      * Set junction temperature
+      set temp = $t
+
+      * Run AC frequency analysis
+      ac dec 20 1 1G
+
+      * 1. Extract DC Gain at low frequency (1 Hz)
+      meas ac a0 FIND vdb(vout) AT=1
+      
+      * 2. Extract Unity Gain Bandwidth (crossover at 0 dB)
+      meas ac f_gbw WHEN vdb(vout)=0
+      
+      * 3. Extract Phase Margin at 0 dB crossover
+      meas ac p_at_gbw FIND vp(vout) WHEN vdb(vout)=0
+      let pm_deg = 180 + p_at_gbw
+
+      * Convert GBW to MHz
+      let gbw_mhz = f_gbw / 1e6
+
+      * Append results directly to CSV
+      echo "$p,$v,$t,$&a0,$&gbw_mhz,$&pm_deg" >> pvt_results.csv
+
+    end
+  end
+end
+
+echo "Done! All 45 PVT corners simulated."
+quit
+.endc
+.end

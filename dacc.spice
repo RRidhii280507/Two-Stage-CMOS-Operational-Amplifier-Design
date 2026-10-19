@@ -1,0 +1,65 @@
+** sch_path: /home/saini/projects/opamp_sky130/dacc.sch
+**.subckt dacc
+I0 Vdd Vb1 0.5u
+C1 Vout net8 0.1p
+C2 GND Vout 0.25p
+V1 Vin1 net6 sine(0 0.5m 1MEG 0 0 0) AC 0.5 0
+V2 net6 GND 1.6
+V3 Vin2 net5 sine(0 0.5m 1MEG 0 0 180) AC 0.5 180
+V4 net5 GND 1.6
+V5 Vdd GND 3.3
+R1 net8 net4 1.5k
+XM7 net4 net2 Vdd Vdd sky130_fd_pr__pfet_g5v0d10v5 L=1 W=2.8 nf=1 ad=0.812 as=0.812 pd=6.18 ps=6.18 nrd=0.103571428571429
++ nrs=0.103571428571429 sa=0 sb=0 sd=0 mult=1
+XM8 net2 net2 Vdd Vdd sky130_fd_pr__pfet_g5v0d10v5 L=1 W=2.8 nf=1 ad=0.812 as=0.812 pd=6.18 ps=6.18 nrd=0.103571428571429
++ nrs=0.103571428571429 sa=0 sb=0 sd=0 mult=1
+XM9 Vout net4 Vdd Vdd sky130_fd_pr__pfet_g5v0d10v5 L=1 W=7.5 nf=1 ad=2.175 as=2.175 pd=15.58 ps=15.58 nrd=0.0386666666666667
++ nrs=0.0386666666666667 sa=0 sb=0 sd=0 mult=1
+XM10 Vout Vb1 net3 GND sky130_fd_pr__nfet_g5v0d10v5 L=1.5 W=2 nf=1 ad=0.58 as=0.58 pd=4.58 ps=4.58 nrd=0.145 nrs=0.145 sa=0 sb=0
++ sd=0 mult=1
+XM11 net3 Vb2 GND GND sky130_fd_pr__nfet_g5v0d10v5 L=1.5 W=2 nf=1 ad=0.58 as=0.58 pd=4.58 ps=4.58 nrd=0.145 nrs=0.145 sa=0 sb=0
++ sd=0 mult=1
+XM3 net7 Vb2 GND GND sky130_fd_pr__nfet_g5v0d10v5 L=1 W=1.5 nf=1 ad=0.435 as=0.435 pd=3.58 ps=3.58 nrd=0.193333333333333
++ nrs=0.193333333333333 sa=0 sb=0 sd=0 mult=1
+XM4 net1 Vb1 net7 GND sky130_fd_pr__nfet_g5v0d10v5 L=1 W=1.5 nf=1 ad=0.435 as=0.435 pd=3.58 ps=3.58 nrd=0.193333333333333
++ nrs=0.193333333333333 sa=0 sb=0 sd=0 mult=1
+XM5 Vb2 Vb2 GND GND sky130_fd_pr__nfet_g5v0d10v5 L=1 W=0.5 nf=1 ad=0.145 as=0.145 pd=1.58 ps=1.58 nrd=0.58 nrs=0.58 sa=0 sb=0 sd=0
++ mult=1
+XM6 Vb1 Vb1 Vb2 GND sky130_fd_pr__nfet_g5v0d10v5 L=1 W=0.5 nf=1 ad=0.145 as=0.145 pd=1.58 ps=1.58 nrd=0.58 nrs=0.58 sa=0 sb=0 sd=0
++ mult=1
+XM1 net2 Vin1 net1 GND sky130_fd_pr__nfet_g5v0d10v5 L=2 W=24.6 nf=1 ad=7.134 as=7.134 pd=49.78 ps=49.78 nrd=0.0117886178861789
++ nrs=0.0117886178861789 sa=0 sb=0 sd=0 mult=1
+XM2 net4 Vin2 net1 GND sky130_fd_pr__nfet_g5v0d10v5 L=2 W=24.6 nf=1 ad=7.134 as=7.134 pd=49.78 ps=49.78 nrd=0.0117886178861789
++ nrs=0.0117886178861789 sa=0 sb=0 sd=0 mult=1
+**** begin user architecture code
+
+.lib /usr/local/share/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice tt
+
+.control
+set color0=white
+set color1=black
+
+* 1. TRANSIENT SIMULATION
+tran 10n 5u
+plot v(vin1) v(vout) title Transient_Vin_vs_Vout
+
+* 2. AC FREQUENCY SWEEP
+ac dec 20 1 1G
+
+let g_db = db(v(vout))
+let p_deg = (180/PI)*cph(v(vout))
+
+meas ac dc_gain find g_db at=1
+meas ac gbw when g_db=0
+meas ac p_gbw find p_deg when g_db=0
+
+print dc_gain gbw p_gbw
+
+plot g_db title Bode_Gain_dB
+plot p_deg title Bode_Phase_deg
+.endc
+
+**** end user architecture code
+**.ends
+.GLOBAL GND
+.end

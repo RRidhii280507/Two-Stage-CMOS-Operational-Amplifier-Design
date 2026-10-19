@@ -1,0 +1,18 @@
+* Single Test Netlist
+.lib /usr/local/share/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice tt
+.include "dacc_core.spice"
+
+.control
+set filetype=ascii
+alter v5 = 3.3
+set temp = 27
+
+ac dec 20 1 1G
+
+meas ac a0 FIND vdb(vout) AT=1
+meas ac f_gbw WHEN vdb(vout)=0
+meas ac p_at_gbw FIND vp(vout) WHEN vdb(vout)=0
+
+quit
+.endc
+.end
